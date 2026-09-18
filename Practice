@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>피하기 게임</title>
+
+<style>
+    body {
+        margin: 0;
+        background: #222;
+        color: white;
+        text-align: center;
+        font-family: Arial, sans-serif;
+    }
+
+    h1 {
+        margin: 20px 0 10px;
+    }
+
+    #game {
+        position: relative;
+        width: 400px;
+        height: 600px;
+        margin: auto;
+        background: #111;
+        border: 3px solid white;
+        overflow: hidden;
+    }
+
+    /* 플레이어 */
+    #player {
+        position: absolute;
+        width: 40px;
+        height: 40px;
+        background: dodgerblue;
+        bottom: 20px;
+        left: 180px;
+        border-radius: 8px;
+    }
+
+    /* 장애물 */
+    .enemy {
+        position: absolute;
+        width: 40px;
+        height: 40px;
+        background: red;
+        border-radius: 50%;
+    }
+
+    #score {
+        font-size: 24px;
+        margin: 10px;
+    }
+
+    #gameOver {
+        display: none;
+        position: absolute;
+        top: 230px;
+        width: 100%;
+        font-size: 35px;
+        font-weight: bold;
+    }
+
+    button {
+        font-size: 25px;
+        padding: 10px 25px;
+        margin: 10px;
+        cursor: pointer;
+    }
+
+    .controls {
+        margin-top: 10px;
+    }
+</style>
+</head>
+
+<body>
+
+<h1>🔴 피하기 게임</h1>
+
+<div id="score">점수: 0</div>
+
+<div id="game">
+
+    <div id="player"></div>
+
+    <div id="gameOver">
+        GAME OVER<br>
+        <button onclick="restart()">다시하기</button>
+    </div>
+
+</div>
+
+<div class="controls">
+    <button onmousedown="moveLeft()">⬅️</button>
+    <button onmousedown="moveRight()">➡️</button>
+</div>
+
+<p>키보드 ← → 로 이동하세요!</p>
+
+<script>
+
+const game = document.getElementById("game");
+const player = document.getElementById("player");
+const scoreText = document.getElementById("score");
+const gameOverText = document.getElementById("gameOver");
+
+let playerX = 180;
+let score = 0;
+let gameRunning = true;
+let enemySpeed = 3;
+
+/* 키보드 */
+document.addEventListener("keydown", function(e) {
+
+    if (!gameRunning) return;
+
+    if (e.key === "ArrowLeft") {
+        moveLeft();
+    }
+
+    if (e.key === "ArrowRight") {
+        moveRight();
+    }
+
+});
+
+/* 왼쪽 이동 */
+function moveLeft() {
+
+    if (playerX > 0) {
+        playerX -= 20;
+    }
+
+    player.style.left = playerX + "px";
+}
+
+/* 오른쪽 이동 */
+function moveRight() {
+
+    if (playerX < 360) {
+        playerX += 20;
+    }
+
+    player.style.left = playerX + "px";
+}
+
+
+/* 장애물 생성 */
+function createEnemy() {
+
+    if (!gameRunning) return;
+
+    const enemy = document.createElement("div");
+
+    enemy.classList.add("enemy");
+
+    let enemyX = Math.floor(Math.random() * 360);
+
+    enemy.style.left = enemyX + "px";
+    enemy.style.top = "-40px";
+
+    game.appendChild(enemy);
+
+    let enemyY = -40;
+
+    /* 장애물 이동 */
+    const moveEnemy = setInterval(function() {
+
+        if (!gameRunning) {
+            clearInterval(moveEnemy);
+            enemy.remove();
+            return;
+        }
+
+        enemyY += enemySpeed;
+
+        enemy.style.top = enemyY + "px";
+
+        /* 충돌 검사 */
+        if (checkCollision(player, enemy)) {
+
+            gameRunning = false;
+
+            gameOverText.style.display = "block";
+
+            clearInterval(moveEnemy);
+        }
+
+        /* 화면 아래로 지나감 */
+        if (enemyY > 600) {
+
+            clearInterval(moveEnemy);
+
+            enemy.remove();
+
+            score++;
+
+            scoreText.innerText = "점수: " + score;
+
+            /* 시간이 지날수록 빨라짐 */
+            if (score % 5 === 0) {
+                enemySpeed += 0.5;
+            }
+        }
+
+    }, 20);
+}
+
+
+/* 충돌 검사 */
+function checkCollision(a, b) {
+
+    const aRect = a.getBoundingClientRect();
+    const bRect = b.getBoundingClientRect();
+
+    return !(
+        aRect.bottom < bRect.top ||
+        aRect.top > bRect.bottom ||
+        aRect.right < bRect.left ||
+        aRect.left > bRect.right
+    );
+}
+
+
+/* 일정 시간마다 장애물 생성 */
+setInterval(function() {
+
+    if (gameRunning) {
+        createEnemy();
+    }
+
+}, 800);
+
+
+/* 다시 시작 */
+function restart() {
+
+    /* 기존 장애물 제거 */
+    document.querySelectorAll(".enemy").forEach(function(enemy) {
+        enemy.remove();
+    });
+
+    playerX = 180;
+    score = 0;
+    enemySpeed = 3;
+
+    player.style.left = playerX + "px";
+
+    scoreText.innerText = "점수: 0";
+
+    gameOverText.style.display = "none";
+
+    gameRunning = true;
+}
+
+</script>
+
+</body>
+</html>
